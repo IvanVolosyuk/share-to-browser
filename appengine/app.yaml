@@ -1,0 +1,12 @@
+application: share-to-browser
+version: 1
+runtime: python
+api_version: 1
+
+handlers:
+- url: /favicon.ico
+  static_files: static/icon.png
+  upload: static/icon.png
+
+- url: .*
+  script: sharetobrowser.py

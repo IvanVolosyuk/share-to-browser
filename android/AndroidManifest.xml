@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      package="com.ivanvolosyuk.sharetobrowser"
+      android:versionCode="1"
+      android:versionName="1.2">
+    <application android:icon="@drawable/icon" android:label="Share to browser">
+        <service android:name=".Sender"/>
+        <activity android:name=".SenderDetails"
+                  android:label="Share to browser" />
+
+        <activity android:name=".Share"
+                  android:label="Share to browser">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/*"/>
+            </intent-filter>
+        </activity>
+        <activity android:name=".HelpPage"
+                  android:label="Share to browser">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name="Associate"
+                  android:label="Share to browser">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="http"
+                      android:host="share-to-browser.appspot.com"
+                      android:path="/associate" />
+            </intent-filter>
+        </activity>
+    </application>
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-sdk android:minSdkVersion="4"></uses-sdk>
+</manifest> 
