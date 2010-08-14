@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="hello">Hello World, HelloActivity!</string>
-    
+    <string name="hello">hello</string>
 </resources>

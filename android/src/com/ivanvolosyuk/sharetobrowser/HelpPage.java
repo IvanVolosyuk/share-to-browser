@@ -21,11 +21,11 @@ public class HelpPage extends Activity {
     LinearLayout layout = new LinearLayout(this);
     layout.setOrientation(LinearLayout.VERTICAL);
     
-    add(layout, "Share to Browser", 26);
+    add(layout, "Send to Computer", 26);
     add(layout, "", 20);
     add(layout, "You can send web pages to your computer's browser using this program.", 15);
     add(layout, "On your computer's browser open:", 15);
-    add(layout, "http://share-to-browser.appspot.com", 20);
+    add(layout, "http://send-to-computer.appspot.com", 20);
     add(layout, "Follow instructions on the page.", 15);
     setContentView(layout);
   }

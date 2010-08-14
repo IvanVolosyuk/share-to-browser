@@ -88,7 +88,7 @@ public class Sender extends Service {
     private boolean sendRequest(String url) {
       String id = getSharedPreferences("id", Activity.MODE_PRIVATE).getString("id", null);
       HttpClient httpclient = new DefaultHttpClient();
-      HttpPost httpPost = new HttpPost("http://share-to-browser.appspot.com/submit");
+      HttpPost httpPost = new HttpPost("http://send-to-computer.appspot.com/submit");
       try {
         List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
         //Your DATA

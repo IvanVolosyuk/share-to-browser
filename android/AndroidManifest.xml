@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="com.ivanvolosyuk.sharetobrowser"
-      android:versionCode="1"
+      android:versionCode="2"
       android:versionName="1.2">
-    <application android:icon="@drawable/icon" android:label="Share to browser">
+    <application android:icon="@drawable/icon" android:label="Send to Computer" android:debuggable="true">
         <service android:name=".Sender"/>
         <activity android:name=".SenderDetails"
-                  android:label="Share to browser" />
+                  android:label="Send to Computer" />
 
         <activity android:name=".Share"
-                  android:label="Share to browser">
+                  android:label="Send to Computer">
             <intent-filter>
                 <action android:name="android.intent.action.SEND"/>
                 <category android:name="android.intent.category.DEFAULT" />
@@ -17,19 +17,19 @@
             </intent-filter>
         </activity>
         <activity android:name=".HelpPage"
-                  android:label="Share to browser">
+                  android:label="Send to Computer">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity android:name="Associate"
-                  android:label="Share to browser">
+                  android:label="Send to Computer">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="http"
-                      android:host="share-to-browser.appspot.com"
+                      android:host="send-to-computer.appspot.com"
                       android:path="/associate" />
             </intent-filter>
         </activity>

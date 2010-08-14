@@ -1,4 +1,4 @@
-application: share-to-browser
+application: send-to-computer
 version: 1
 runtime: python
 api_version: 1
@@ -9,4 +9,4 @@ handlers:
   upload: static/icon.png
 
 - url: .*
-  script: sharetobrowser.py
+  script: sendtocomputer.py

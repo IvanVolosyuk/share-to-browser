@@ -31,7 +31,7 @@ public class Share extends Activity {
     layout.setOrientation(LinearLayout.VERTICAL);
 
     if (id == null) {
-      add(layout, "Share to Browser", 26);
+      add(layout, "Send to Computer", 26);
       add(layout, "", 20);
       add(layout, "Please associate your device with a browser window before sharing.", 15);
       add(layout, "Open the address on your computer:", 15);
