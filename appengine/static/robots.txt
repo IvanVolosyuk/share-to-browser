@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /associate
+Disallow: /done
+Disallow: /me
+Disallow: /poll
+Disallow: /send
+Disallow: /submit

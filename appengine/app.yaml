@@ -8,5 +8,9 @@ handlers:
   static_files: static/icon.png
   upload: static/icon.png
 
+- url: /robots.txt
+  static_files: static/robots.txt
+  upload: static/robots.txt
+
 - url: .*
   script: sendtocomputer.py
