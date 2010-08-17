@@ -102,10 +102,10 @@ public class Sender extends Service {
         }
         // success
       } catch (Throwable e) {
-        Log.e("share-to-browser", "send", e);
+        Log.e("send-to-computer", "send", e);
         return false;
       }
-      Log.d("share-to-browser", "sending request finished");
+      Log.d("send-to-computer", "sending request finished");
       return true;
     }
     

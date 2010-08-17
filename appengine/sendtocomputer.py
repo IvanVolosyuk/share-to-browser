@@ -1,4 +1,5 @@
 import wsgiref.handlers
+import datetime
 
 from google.appengine.ext import webapp
 from google.appengine.api import users
@@ -34,12 +35,29 @@ class Page(webapp.RequestHandler):
     url = self.request.get('url')
     Item(browser = self.getBrowser(), url = url).put()
 
+  def date_rfc1123(self, t):
+    return datetime.datetime.utcfromtimestamp(t).strftime("%a, %d %b %Y %H:%M:%S GMT")
+
+  def cache(self, cachetime = 86400):
+    now = time.time()
+    self.response.headers["Date"] = self.date_rfc1123(now)
+    self.response.headers["Expires"] = self.date_rfc1123(now + cachetime)
+    self.response.headers["Cache-control"] = "public, max-age=%d" % cachetime
+
+  def nocache(self):
+    now = time.time()
+    self.response.headers["Date"] = self.date_rfc1123(now)
+    self.response.headers["Expires"] = "Mon, 01 Jan 1990 00:00:00 GMT"
+    self.response.headers["Pragma"] = "no-cache"
+    self.response.headers["Cache-control"] = "no-cache, must-revalidate"
+
 class MainPage(Page):
   def __init__(self):
     self.random = SystemRandom();
 
   def get(self):
     id = str(self.random.random())[2:]
+    self.nocache()
     self.redirect("/me?browser=" + id)
 
 class AndroidSubmit(Page):
@@ -49,7 +67,18 @@ class AndroidSubmit(Page):
 
 class Send(Page):
   def get(self):
+    self.cache(600)
     self.render('send.html')
+
+class Count(Page):
+  def get(self):
+    self.nocache()
+    items = db.GqlQuery(
+        "SELECT __key__ FROM Item WHERE browser = :1", self.getBrowser())
+    count = 0
+    for item in items:
+      count += 1
+    self.response.out.write("%d" % count);
 
 class Done(Page):
   def post(self):
@@ -59,6 +88,7 @@ class Done(Page):
 
 class Poll(Page):
   def get(self):
+    self.nocache()
     self.response.headers['Content-type'] = 'text/plain'
     items = db.GqlQuery(
         "SELECT * FROM Item WHERE browser = :1", self.getBrowser())
@@ -69,15 +99,18 @@ class Poll(Page):
 
 class Me(Page):
   def get(self):
-    self.render('sharetobrowser.html')
+    self.cache(600)
+    self.render('sendtocomputer.html')
 
 class Associate(Page):
   def get(self):
+    self.cache(600)
     self.render('associate.html')
 
 application = webapp.WSGIApplication([
   ('/', MainPage),
   ('/me', Me),
+  ('/count', Count),
   ('/poll', Poll),
   ('/send', Send),
   ('/done', Done),

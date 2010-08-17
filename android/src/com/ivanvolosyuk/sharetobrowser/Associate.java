@@ -38,7 +38,7 @@ public class Associate extends Activity {
     }
     
     add(layout, "Send to Computer", 26);
-    add(layout, "", 15);
+    add(layout, "", 16);
     if (success) {
       add(layout, "Congratulation! You phone is associated with the browser window. Now you can 'Share' pages and they will appear as new windows or tabs in your browser. Don't forget to disable popup blocker.", 18);
     } else {

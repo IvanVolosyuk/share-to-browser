@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="com.ivanvolosyuk.sharetobrowser"
-      android:versionCode="2"
-      android:versionName="1.2">
+      android:versionCode="3" android:versionName="1.3: main screen shows link to the page were all shared pages are being sent.">
     <application android:icon="@drawable/icon" android:label="Send to Computer" android:debuggable="true">
         <service android:name=".Sender"/>
         <activity android:name=".SenderDetails"
