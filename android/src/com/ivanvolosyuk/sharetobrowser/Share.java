@@ -24,25 +24,33 @@ public class Share extends Activity {
     super.onCreate(savedInstanceState);
     
     id = getSharedPreferences("id", Activity.MODE_PRIVATE).getString("id", null);
-    Log.d("share-to-browser", "share for id: " + id);
+    Log.d("send-to-computer", "share for id: " + id);
 
     
     LinearLayout layout = new LinearLayout(this);
     layout.setOrientation(LinearLayout.VERTICAL);
+    String url = getIntent().getStringExtra(Intent.EXTRA_TEXT);
+    
+    String prefix="http://send-to-computer.appspot.com/associate?browser=";
+    if (url.startsWith(prefix)) {
+      Associate.associate(this, layout, url.substring(prefix.length(), url.length()));
+      setContentView(layout);
+      return;
+    }
 
     if (id == null) {
       add(layout, "Send to Computer", 26);
       add(layout, "", 20);
       add(layout, "Please associate your device with a browser window before sharing.", 15);
       add(layout, "Open the address on your computer:", 15);
-      add(layout, "http://share-to-browser.appspot.com/", 26);
+      add(layout, "http://send-to-computer.appspot.com/", 26);
       setContentView(layout);
       return;
     }
     
     Intent i = new Intent(this, Sender.class);
     i.putExtra("id", id);
-    i.putExtra("url", getIntent().getStringExtra(Intent.EXTRA_TEXT));
+    i.putExtra("url", url);
     startService(i);
     finish();
   }

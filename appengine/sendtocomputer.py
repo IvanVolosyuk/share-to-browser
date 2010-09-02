@@ -33,7 +33,8 @@ class Page(webapp.RequestHandler):
 
   def store(self):
     url = self.request.get('url')
-    Item(browser = self.getBrowser(), url = url).put()
+    if url:
+      Item(browser = self.getBrowser(), url = url).put()
 
   def date_rfc1123(self, t):
     return datetime.datetime.utcfromtimestamp(t).strftime("%a, %d %b %Y %H:%M:%S GMT")
@@ -105,7 +106,11 @@ class Me(Page):
 class Associate(Page):
   def get(self):
     self.cache(600)
-    self.render('associate.html')
+    uastring = self.request.headers.get('user_agent')
+    if "Android" in uastring and "Linux" in uastring:
+      self.render('associate_android.html')
+    else:
+      self.render('associate.html')
 
 application = webapp.WSGIApplication([
   ('/', MainPage),
