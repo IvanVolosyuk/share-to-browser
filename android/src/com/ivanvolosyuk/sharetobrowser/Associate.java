@@ -1,8 +1,12 @@
 package com.ivanvolosyuk.sharetobrowser;
 
 import android.app.Activity;
+import android.app.backup.BackupManager;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.widget.LinearLayout;
@@ -16,15 +20,58 @@ public class Associate extends Activity {
     layout.addView(v);
   }
   
-  public static void associate(Activity activity, LinearLayout layout, String id) {
+  static class Backup {
+    void requestBackup(Context context) {}
+    
+    static Backup newInstance() {
+      final int sdkVersion = Integer.parseInt(Build.VERSION.SDK);
+      if (sdkVersion < Build.VERSION_CODES.FROYO) {
+        return new Backup();
+      }
+      return new RealBackup();
+    }
+  };
+
+  static class RealBackup extends Associate.Backup {
+    RealBackup() {}
+    void requestBackup(Context context) {
+      BackupManager mgr = new BackupManager(context);
+      mgr.dataChanged();
+    }
+  };
+  
+  static Backup backup = Backup.newInstance();
+  
+  static void ensureBackup(Context context) {
+    SharedPreferences prefs = context.getSharedPreferences("id", Activity.MODE_PRIVATE);
+    if (prefs.contains("id") && prefs.getBoolean("backup", false) == false) {
+      // need to backup
+      // pass through
+    } else {
+      // everything ok
+      return;
+    }
+    Editor e = prefs.edit();
+    e.putBoolean("backup", true);
+    e.commit();
+    backup.requestBackup(context);
+  }
+  
+  public static boolean associate(Activity activity, String id) {
     boolean success = false;
     if (id != null) {
       Editor editor = activity.getSharedPreferences("id", Activity.MODE_PRIVATE).edit();
       editor.putString("id", id);
+      editor.putBoolean("backup", true);
       editor.commit();
+      backup.requestBackup(activity);
       success = true;
     }
-
+    return success;
+  }
+  
+  public static void associate(Activity activity, LinearLayout layout, String id) {
+    boolean success = associate(activity, id);
     add(activity, layout, "Send to Computer", 26);
     add(activity, layout, "", 16);
     if (success) {

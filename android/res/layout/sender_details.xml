@@ -1,0 +1,41 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent">
+<LinearLayout 
+   android:orientation="vertical"
+   android:layout_width="fill_parent"
+   android:layout_height="wrap_content">
+    <TextView android:text="Send to Computer"
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:textAppearance="?android:attr/textAppearanceLarge"
+              android:padding="5dip"
+              />
+    <TextView android:text="List of URLs:"
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:padding="5dip"
+              android:textAppearance="?android:attr/textAppearanceMedium"
+              />
+              <LinearLayout android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
+                            android:padding="5dip"
+                            android:id="@+id/list"
+                            android:orientation="vertical"/>
+    <LinearLayout android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:padding="5dip"
+                  >
+            <Button android:text="Ok"
+                    android:id="@+id/ok"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="2"/>
+            <Button android:text="Cancel upload"
+                    android:id="@+id/cancel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"/>
+    </LinearLayout>
+</LinearLayout>
+</ScrollView>

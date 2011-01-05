@@ -3,7 +3,9 @@ import datetime
 
 from google.appengine.ext import webapp
 from google.appengine.api import users
+from google.appengine.api import channel
 from google.appengine.ext import db
+from google.appengine.ext.webapp import template
 from google.appengine.api.urlfetch import fetch
 from urllib2 import urlopen
 from urllib2 import Request
@@ -29,12 +31,17 @@ class Page(webapp.RequestHandler):
 
   def render(self, name):
     path = os.path.join(os.path.dirname(__file__), 'static/' + name)
-    self.response.out.write(open(path).read().replace('$$', self.getBrowser()))
+    self.response.out.write(template.render(path, {
+      'base_url' : 'send-to-computer.appspot.com',
+      'browser_id' : self.getBrowser()
+    }))
 
   def store(self):
     url = self.request.get('url')
+    browser = self.getBrowser()
     if url:
-      Item(browser = self.getBrowser(), url = url).put()
+      Item(browser = browser, url = url).put()
+    channel.send_message(browser, url)
 
   def date_rfc1123(self, t):
     return datetime.datetime.utcfromtimestamp(t).strftime("%a, %d %b %Y %H:%M:%S GMT")
@@ -99,9 +106,31 @@ class Poll(Page):
       break
 
 class Me(Page):
+
+  def render(self, name):
+    path = os.path.join(os.path.dirname(__file__), 'static/' + name)
+    browser = self.getBrowser()
+    channel_id = channel.create_channel(browser)
+    self.response.out.write(template.render(path, {
+      'base_url' : 'send-to-computer.appspot.com',
+      'browser_id' : browser,
+      'channel_id' : channel_id
+    }))
+
   def get(self):
     self.cache(600)
     self.render('sendtocomputer.html')
+
+class Channel(Page):
+  def makechannel(self):
+    browser = self.getBrowser()
+    channel_id = channel.create_channel(browser)
+    self.response.out.write(channel_id)
+
+  def get(self):
+    self.nocache()
+    self.makechannel()
+
 
 class Associate(Page):
   def get(self):
@@ -120,6 +149,7 @@ application = webapp.WSGIApplication([
   ('/send', Send),
   ('/done', Done),
   ('/submit', AndroidSubmit),
+  ('/channel', Channel),
   ('/associate', Associate),
 ], debug=True)
 

@@ -1,16 +1,5 @@
 package com.ivanvolosyuk.sharetobrowser;
 
-import android.app.Activity;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.app.Service;
-import android.content.Context;
-import android.content.Intent;
-import android.os.Handler;
-import android.os.IBinder;
-import android.util.Log;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +12,27 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.Service;
+import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
+import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.IBinder;
+import android.util.Log;
+
 public class Sender extends Service {
+  private static final String TAG = "sendtocomputer";
+  private final Handler handler = new Handler();
+  
+  static final String[] PROJECTION = new String[] {
+      UrlStore.URL, UrlStore.BROWSER_ID
+    };
+  static final String SELECTION =
+    UrlStore.URL + " = ? AND " + UrlStore.BROWSER_ID + " = ?";
 
   @Override
   public IBinder onBind(Intent intent) {
@@ -36,25 +45,126 @@ public class Sender extends Service {
     super.onCreate();
   }
   
-  private synchronized void sendUrl(String url) {
-    if (networkThread == null) {
-      networkThread = new NetworkThread(url);
-    } else {
-      networkThread.addUrl(url);
+  private boolean pendingRequest = false;
+  private boolean running = false;
+  
+  public class Entry {
+    public String url;
+    public String id;
+  }
+
+  class DBLookup extends AsyncTask<Void, Void, Entry> {
+    @Override
+    protected Entry doInBackground(Void... params) {
+      Log.d(TAG, "db lookup background");
+      Cursor c = getContentResolver().query(
+          UrlStore.CONTENT_URI, PROJECTION, null, null, null);
+      if (!c.moveToFirst()) {
+        c.close();
+        Log.d(TAG, "db lookup no url");
+        return null;
+      }
+      
+      Entry e = new Entry();
+      e.url = c.getString(0);
+      e.id = c.getString(1);
+      Log.d(TAG, "db lookup url: " + e.url);
+      c.close();
+      return e;
+    }
+    
+    @Override
+    protected void onPostExecute(Entry result) {
+      if (result == null) {
+        stopLookup();
+        return;
+      } else {
+        new NetSend().execute(result);
+      }
+    }
+  }
+  
+  class NetSend extends AsyncTask<Entry, Void, Boolean> {
+    @Override
+    protected Boolean doInBackground(Entry... params) {
+      Entry e = params[0];
+      Log.d(TAG, "net send url: " + e.url);
+      boolean success = sendRequest(e.url, e.id);
+      if (!success) {
+        return false;
+      }
+      String[] selectionArgs = new String[] { e.url, e.id };
+      getContentResolver().delete(UrlStore.CONTENT_URI, SELECTION, selectionArgs);
+      return true;
+    }
+    
+    @Override
+    protected void onPostExecute(Boolean result) {
+      if (result) {
+        startLookup();
+      } else {
+        running = false;
+        handler.postDelayed(new Runnable() {
+          @Override
+          public void run() {
+            if (running == false) {
+              startLookup();
+            }
+          }
+        }, 300000);
+        
+      }
     }
   }
   
   @Override
   public void onStart(Intent intent, int startId) {
     super.onStart(intent, startId);
-    String url = intent.getStringExtra("url");
     
-    String tickerText = "Sending url to browser";
+    if (intent.getBooleanExtra("stop", false)) {
+      hideNotification();
+      cancelUpload();
+      return;
+    }
+    
+    showNotification();
+    pendingRequest = true;
+    if (!running) {
+      startLookup();
+    }
+  }
+  
+  private void startLookup() {
+    running = true;
+    pendingRequest = false;
+    new DBLookup().execute();
+  }
+  
+  private void cancelUpload() {
+    getContentResolver().delete(UrlStore.CONTENT_URI, null, null);
+  }
+  
+  private void stopLookup() {
+    running = false;
+    if (pendingRequest) {
+      startLookup();
+    } else {
+      hideNotification();
+      stopSelf();
+    }
+  }
+  
+  private void showNotification() {
+    String tickerText = "Got new URL";
     long when = System.currentTimeMillis();
     Notification notification = new Notification(R.drawable.icon, tickerText, when);
     
+    Cursor c = getContentResolver().query(
+        UrlStore.CONTENT_URI, PROJECTION, null, null, null);
+    int numUrls = c.getCount();
+
     Context context = getApplicationContext();
-    CharSequence contentTitle = "Sending url to browser";
+    CharSequence contentTitle = (numUrls == 1 ? "One URL" : numUrls + " URLs") + " to be sent";
     CharSequence contentText = null;
     Intent notificationIntent = new Intent(this, SenderDetails.class);
     PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
@@ -62,93 +172,39 @@ public class Sender extends Service {
     NotificationManager mgr =
       (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
     mgr.notify(0, notification);
-    
-    sendUrl(url);
   }
   
-  private void uploadFinished() {
-    synchronized (this) {
-      if (networkThread != null) {
-        return;
-      }
-    }
-    
+  private void hideNotification() {
     NotificationManager mgr =
       (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-    mgr.cancelAll();    
-    this.stopSelf();
+    mgr.cancelAll();
   }
   
-  class NetworkThread extends Thread {
-    public NetworkThread(String url) {
-      addUrl(url);
-      start();
-    }
-    
-    private boolean sendRequest(String url) {
-      String id = getSharedPreferences("id", Activity.MODE_PRIVATE).getString("id", null);
-      HttpClient httpclient = new DefaultHttpClient();
-      HttpPost httpPost = new HttpPost("http://send-to-computer.appspot.com/submit");
-      try {
-        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-        //Your DATA
-        nameValuePairs.add(new BasicNameValuePair("browser", id));
-        nameValuePairs.add(new BasicNameValuePair("url", url));
-        httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-        HttpResponse response;
-        response=httpclient.execute(httpPost);
-        if (response.getStatusLine().getStatusCode() != 200) {
-          throw new IOException("wrong response code");
-        }
-        // success
-      } catch (Throwable e) {
-        Log.e("send-to-computer", "send", e);
-        return false;
+  /**
+   * Slow network operation to send url to server.
+   * @param url
+   * @return
+   */
+  private boolean sendRequest(String url, String id) {
+    HttpClient httpclient = new DefaultHttpClient();
+    HttpPost httpPost = new HttpPost("http://send-to-computer.appspot.com/submit");
+    try {
+      List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+      //Your DATA
+      nameValuePairs.add(new BasicNameValuePair("browser", id));
+      nameValuePairs.add(new BasicNameValuePair("url", url));
+      httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+      HttpResponse response;
+      response=httpclient.execute(httpPost);
+      if (response.getStatusLine().getStatusCode() != 200) {
+        throw new IOException("wrong response code");
       }
-      Log.d("send-to-computer", "sending request finished");
-      return true;
+      // success
+    } catch (Throwable e) {
+      Log.e(TAG, "send", e);
+      return false;
     }
-    
-    public void run() {
-      try {
-        while (true) {
-          String url = waitForNewUrl();
-          if (url == null) break;
-          while (!sendRequest(url)) {
-            Thread.sleep(300000);
-          }
-        }
-      } catch (InterruptedException e) {
-      }
-      uploadFinished();
-    }
-    
-    private String waitForNewUrl() throws InterruptedException{
-      synchronized (Sender.this) {
-        if (urls.size() != 0) {
-          return urls.remove(0);
-        }
-        Sender.this.networkThread = null;
-        return null;
-      }
-    }
-    
-    public void addUrl(String url) {
-      urls.add(url);
-    }
-    
-    private void uploadFinished() {
-      handler.post(new Runnable() {
-        @Override
-        public void run() {
-          Sender.this.uploadFinished();
-        }
-      });
-    }
-    
-    ArrayList<String> urls = new ArrayList<String>();
+    Log.d(TAG, "sending request finished");
+    return true;
   }
-  
-  NetworkThread networkThread;
-  Handler handler = new Handler();
 }

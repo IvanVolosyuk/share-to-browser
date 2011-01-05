@@ -1,6 +1,7 @@
 <html>
 <head>
 <title>Send to Computer</title>
+<script type="text/javascript" src="/_ah/channel/jsapi"></script>
 <script type="text/javascript">
 
 
@@ -16,13 +17,10 @@ XMLHttpRequest = function () {
   throw new Error("This browser does not support XMLHttpRequest.");
 };
 
-function doRequest(id) {
-  if (inflight) return;
+function doRequest() {
   var xhr = new XMLHttpRequest();
-  inflight = true;
   xhr.onreadystatechange = function() {
     if (xhr.readyState != 4) return;
-    inflight = false;
 
     if (xhr.status == 200 && xhr.responseText != "") {
       document.getElementById("recent").style.display = "inline";
@@ -32,7 +30,7 @@ function doRequest(id) {
       link.appendChild(text);
       node = document.createElement("li");
       node.appendChild(link);
-      
+
       parentNode = document.getElementById("links");
       if (parentNode.children.length > 0) {
         parentNode.insertBefore(node, parentNode.children[0]);
@@ -40,26 +38,62 @@ function doRequest(id) {
         parentNode.appendChild(node);
       }
       window.open(xhr.responseText);
-      doRequest(id);
-    } else {
-      setTimeout(function() {
-        doRequest(id);
-      }, 30000);
+      doRequest();
     }
   };
   xhr.open('GET', '/poll?browser=' + id, true);
   xhr.send(null);
 }
 
+function requestLoop() {
+  doRequest();
+  setTimeout(function() {
+      requestLoop();
+  }, 30000);
+}
+
+var mysocket = null;
+
+function makeChannel() {
+  if (mysocket != null) mysocket.close();
+
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState != 4) return;
+
+    if (xhr.status == 200 && xhr.responseText != "") {
+      var chid = xhr.responseText;
+
+      var channel = new goog.appengine.Channel(chid);
+      var socket = channel.open();
+      mysocket = socket;
+
+      socket.onmessage = function(evt) {
+        doRequest(id);
+      }
+
+      socket.onerror = function(evt) {
+      }
+    }
+  }
+  xhr.open('GET', '/channel?browser=' + id, true);
+  xhr.send(null);
+}
+function channelLoop() {
+  makeChannel();
+  setTimeout(function() {
+    channelLoop();
+  }, 3600000);
+}
+
 function init() {
-  id = '$$';
-  inflight = false;
+  id = '{{ browser_id }}';
+  requestLoop();
   qrUrl = "http://chart.apis.google.com/chart?cht=qr&" +
           "chs=350x350&chl=http%3A%2F%2F" +
-          "send-to-computer.appspot.com%2Fassociate%3Fbrowser%3D" + id;
+          "{{ base_url }}%2Fassociate%3Fbrowser%3D" + id;
   document.getElementById("image").innerHTML = '<img align="left" src="' + qrUrl + '">';
-
-  doRequest(id);
+  channelLoop();
 }
 </script>
 </head>

@@ -7,7 +7,7 @@
 <center><h1>Send to Computer!</h1></center>
 Paste new links here:<br/>
 <form method="POST" action="/done">
-<input type="hidden" name="browser" value="$$">
+<input type="hidden" name="browser" value="{{ browser_id }}">
 <input type="text" name="url" style='width: 100%'><br/>
 <input type="submit" value="Send the link to browser">
 </form>

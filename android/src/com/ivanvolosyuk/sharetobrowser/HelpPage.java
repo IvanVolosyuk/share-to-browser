@@ -30,6 +30,7 @@ public class HelpPage extends Activity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    Associate.ensureBackup(this);
     setContentView(R.layout.main);
     EditText editText = (EditText) findViewById(R.id.url);
     editText.setFilters(new InputFilter[] {
