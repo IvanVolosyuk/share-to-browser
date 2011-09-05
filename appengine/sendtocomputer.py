@@ -4,6 +4,7 @@ import datetime
 from google.appengine.ext import webapp
 from google.appengine.api import users
 from google.appengine.api import channel
+from google.appengine.api import memcache
 from google.appengine.ext import db
 from google.appengine.ext.webapp import template
 from google.appengine.api.urlfetch import fetch
@@ -18,6 +19,7 @@ import hashlib
 import time
 import os
 from random import SystemRandom
+import logging
 
 class Item(db.Model):
   browser = db.StringProperty(required = True)
@@ -41,6 +43,10 @@ class Page(webapp.RequestHandler):
     browser = self.getBrowser()
     if url:
       Item(browser = browser, url = url).put()
+
+    # Remove a flag in memcache indicating empty datastore
+    memcache.delete(key = browser)
+    # logging.debug("memcache: event for %s" % browser)
     channel.send_message(browser, url)
 
   def date_rfc1123(self, t):
@@ -92,18 +98,33 @@ class Done(Page):
   def post(self):
     self.store()
     self.redirect("/send?browser=" + self.getBrowser())
-    
+
 
 class Poll(Page):
   def get(self):
     self.nocache()
     self.response.headers['Content-type'] = 'text/plain'
+    browser = self.getBrowser()
+
+    # Verify memcache flag indicating empty datastore
+    if memcache.get(key = browser):
+      # logging.debug("memcache: datastore is empty for %s" % browser)
+      return
+
+    # logging.debug("memcache: miss for %s" % browser)
+    empty = True
     items = db.GqlQuery(
-        "SELECT * FROM Item WHERE browser = :1", self.getBrowser())
+        "SELECT * FROM Item WHERE browser = :1", browser)
     for item in items:
       self.response.out.write(item.url);
       item.delete()
+      empty = False
       break
+
+    if empty:
+      # Set a flag indicating empty datastore
+      memcache.set(key = browser, value = True, time = 3600)
+      # logging.debug("memcache: remember that datastore is empty for %s" % browser)
 
 class Me(Page):
 
