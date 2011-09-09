@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>Send to Computer</title>
-<script type="text/javascript" src="/_ah/channel/jsapi"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
 <script type="text/javascript">
 
 
@@ -17,97 +17,91 @@ XMLHttpRequest = function () {
   throw new Error("This browser does not support XMLHttpRequest.");
 };
 
-function doRequest() {
-  var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState != 4) return;
-
-    if (xhr.status == 200 && xhr.responseText != "") {
-      document.getElementById("recent").style.display = "inline";
-      var text = document.createTextNode(xhr.responseText);
-      var link = document.createElement('a');
-      link["href"] = xhr.responseText;
-      link.appendChild(text);
-      node = document.createElement("li");
-      node.appendChild(link);
-
-      parentNode = document.getElementById("links");
-      if (parentNode.children.length > 0) {
-        parentNode.insertBefore(node, parentNode.children[0]);
-      } else {
-        parentNode.appendChild(node);
-      }
-      window.open(xhr.responseText);
-      doRequest();
+$(document).ready(function(){
+  $(".title").click(function(){
+    if ($('.body').css("display") == "none"){ 
+      $(this).text("How to use it:");
+    } else {
+      $(this).text("[+] Instructions");
     }
-  };
-  xhr.open('GET', '/poll?browser=' + id, true);
-  xhr.send(null);
-}
+    $(this).next(".body").slideToggle(250);
+  });
 
-function requestLoop() {
-  doRequest();
-  setTimeout(function() {
-      requestLoop();
-  }, 30000);
-}
+  function doRequest() {
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState != 4) return;
 
-var mysocket = null;
-
-function makeChannel() {
-  if (mysocket != null) mysocket.close();
-
-  var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState != 4) return;
-
-    if (xhr.status == 200 && xhr.responseText != "") {
-      var chid = xhr.responseText;
-
-      var channel = new goog.appengine.Channel(chid);
-      var socket = channel.open();
-      mysocket = socket;
-
-      socket.onmessage = function(evt) {
-        doRequest(id);
+      if (xhr.status == 200 && xhr.responseText != "") {
+        document.getElementById("recent").style.display = "inline";
+        $("#recent").slideDown(500);
+        $('<a></a>').attr('href', xhr.responseText).text(xhr.responseText).appendTo("#links");
+        $('<br>').appendTo("#links");
+        $(".title").text("[+] Instructions");
+        $(".body").slideUp(250);
+        window.open(xhr.responseText);
+        doRequest();
       }
-
-      socket.onerror = function(evt) {
-      }
-    }
+    };
+    xhr.open('GET', '/poll?browser=' + id, true);
+    xhr.send(null);
   }
-  xhr.open('GET', '/channel?browser=' + id, true);
-  xhr.send(null);
-}
-function channelLoop() {
-  makeChannel();
-  setTimeout(function() {
-    channelLoop();
-  }, 3600000);
-}
 
-function init() {
+  function requestLoop() {
+    setTimeout(function() {
+        requestLoop();
+    }, 30000);
+    doRequest();
+  }
+
   id = '{{ browser_id }}';
   requestLoop();
   qrUrl = "http://chart.apis.google.com/chart?cht=qr&" +
           "chs=350x350&chl=http%3A%2F%2F" +
           "{{ base_url }}%2Fassociate%3Fbrowser%3D" + id;
   document.getElementById("image").innerHTML = '<img align="left" src="' + qrUrl + '">';
-  channelLoop();
-}
+});
+
+
 </script>
+<style type="text/css">
+.title {
+  padding: 5px 10px;
+  cursor: pointer;
+  position: relative;
+  color:#206020;
+  margin:1px;
+}
+</style>
+
 </head>
 
-<body onload="init();">
+<body>
 <center><h1>Send to Computer</h1></center>
-<h2>How to use it:</h2>
+<h2 class="title">How to use it:</h2>
+<div class="body">
 <ul>
-<li>On your phone scan the displayed qr-code using <code>Barcode Scanner</code> app. Select open in Browser and choose <code>Send to Computer</code> application. This will associate your phone with the browser window.</li>
-<li>Now you can 'Share' pages with 'Send to Computer' and new windows/tabs will open in this browser automatically.</li>
-<li>Don't forget to disable popup blocker otherwise the windows or tabs will be blocks.</li>
-<li>Try sending a page: in your phone <code>Browser</code>, press Menu -&gt; More -&gt; 'Share Page', select 'Send to Computer'. The browser window or tab should open next to this one within 2 minutes with the page you've send.</li>
+<li>On your phone scan the displayed qr-code using the <code>Barcode Scanner</code>
+app. Select 'Open in Browser' and choose <code>Send to Computer</code>
+application. This will associate your phone with the browser window and the unique
+ID in the page URL.</li>
+<li>Now you can 'Share' pages with the 'Send to Computer' android app and new
+windows/tabs will be opened in the browser automatically.</li>
+<li>Don't forget to disable popup blocker, otherwise the windows or tabs will be
+blocked.</li>
+<li>Try sending a web page: in your phone <code>Browser</code>, press Menu -&gt;
+More -&gt; 'Share Page', select 'Send to Computer'. The browser window or tab
+should open next to this one within 30 seconds with the page you have just
+sent.</li>
 
-<li>You can bookmark this page and even open on other computer to access the links you send from you android device. You can close this page and open it later and it will instantly open all the links you sent in new windows. <b><h3>If you open <code>http://send-to-computer.appspot.com</code> another time you will receive different browser id and will not have an access to your shared links. Bookmark current page with your current browser id!</h3></b>
+<li>You can bookmark this page and even open on another computer to access the
+links you send from you android device. The browser id in the URL is your unique
+identifier. You can close this page and open it later and it will instantly open
+all the links you sent as new windows. <b><h3>Attention! If you open the
+    <code>http://send-to-computer.appspot.com</code> next time without the ID you
+    will get a different browser id and will not have an access to the web pages
+    you have shared before. Bookmark this page! If you lots your browser id, you
+    copy it from the 'Send to Computer' android app main page.</h3></b>
 </li>
 
 </ul>
@@ -115,19 +109,22 @@ function init() {
 <h2>How it works:</h2>
   <ul>
   <li>
-    When you scan qr-code your phone remembers the number generated by this browser window.
+    When you scan qr-code your phone remembers the number generated by this
+    browser window.
   </li>
   <li>
-    When you share a page on your phone - it sends the link and your unique number to the 'send-to-computer.appspot.com'.
-  </li> 
+    When you share a page on your phone - it sends the link and your unique
+    number to the 'send-to-computer.appspot.com'.
+  </li>
   <li>
-    Every 2 minutes this browser window fetches new links from 'send-to-computer.appspot.com' and opens them in new windows.
+    Every 2 minutes this browser window fetches new links from
+    'send-to-computer.appspot.com' and opens them in new windows.
   </li>
 </ul>
+</div>
 <span id="recent" style="display:none">
-<h2>Recent links received:</h2>
+  <h2>Recent links received:</h2>
 <ul id="links">
-<span id="before"></span>
 </ul>
 </span>
 </body>

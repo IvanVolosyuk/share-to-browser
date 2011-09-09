@@ -131,11 +131,9 @@ class Me(Page):
   def render(self, name):
     path = os.path.join(os.path.dirname(__file__), 'static/' + name)
     browser = self.getBrowser()
-    channel_id = channel.create_channel(browser)
     self.response.out.write(template.render(path, {
       'base_url' : 'send-to-computer.appspot.com',
       'browser_id' : browser,
-      'channel_id' : channel_id
     }))
 
   def get(self):
