@@ -1,7 +1,8 @@
 import wsgiref.handlers
 import datetime
 
-from google.appengine.ext import webapp
+import webapp2
+
 from google.appengine.api import users
 from google.appengine.api import channel
 from google.appengine.api import memcache
@@ -26,7 +27,7 @@ class Item(db.Model):
   url = db.StringProperty(required = True)
   date = db.DateTimeProperty(required = True, auto_now_add=True)
 
-class Page(webapp.RequestHandler):
+class Page(webapp2.RequestHandler):
   def getBrowser(self):
     browser = self.request.get('browser')
     return re.sub('[^0-9a-zA-Z_]', '0', browser)
@@ -66,7 +67,8 @@ class Page(webapp.RequestHandler):
     self.response.headers["Cache-control"] = "no-cache, must-revalidate"
 
 class MainPage(Page):
-  def __init__(self):
+  def __init__(self, a, b):
+    super(MainPage, self).__init__(a, b);
     self.random = SystemRandom();
 
   def get(self):
@@ -160,7 +162,7 @@ class Associate(Page):
     else:
       self.render('associate.html')
 
-application = webapp.WSGIApplication([
+application = webapp2.WSGIApplication([
   ('/', MainPage),
   ('/me', Me),
   ('/count', Count),
@@ -171,10 +173,3 @@ application = webapp.WSGIApplication([
   ('/channel', Channel),
   ('/associate', Associate),
 ], debug=True)
-
-
-def main():
-  wsgiref.handlers.CGIHandler().run(application)
-
-if __name__ == '__main__':
-  main()

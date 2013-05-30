@@ -1,7 +1,8 @@
-application: send-to-computer
+application: send-to-computer-hrd
 version: 1
-runtime: python
+runtime: python27
 api_version: 1
+threadsafe: true
 
 handlers:
 - url: /favicon.ico
@@ -13,4 +14,4 @@ handlers:
   upload: static/robots.txt
 
 - url: .*
-  script: sendtocomputer.py
+  script: sendtocomputer.application

@@ -35,11 +35,18 @@ $(document).ready(function(){
       if (xhr.status == 200 && xhr.responseText != "") {
         document.getElementById("recent").style.display = "inline";
         $("#recent").slideDown(500);
-        $('<a></a>').attr('href', xhr.responseText).text(xhr.responseText).appendTo("#links");
+	var link = xhr.responseText;
+	var text = link;
+
+	if (link.indexOf('"') == 0) {
+	  text = link.substr(0, link.lastIndexOf('"') + 1);
+	  link = link.substr(link.lastIndexOf('"') + 1);
+	}
+        $('<a></a>').attr('href', link).text(text).appendTo("#links");
         $('<br>').appendTo("#links");
         $(".title").text("[+] Instructions");
         $(".body").slideUp(250);
-        window.open(xhr.responseText);
+        window.open(link);
         doRequest();
       }
     };
